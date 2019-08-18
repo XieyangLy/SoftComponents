@@ -18,13 +18,13 @@
 
 
 #define softHeapCtrlTypeDef(name,heap_cap,i_size)   uint8_t name##HeapBuf[heap_cap*i_size];  \
-struct softHeapCtrlType name= \
+struct softHeapCtrlType name = \
 {   \
     .heap = name##HeapBuf,\
     .heapCapaciity = heap_cap,\
     .itemSzie = i_size,\
     .heapPtr = 0,\
-}
+};
 
 struct softHeapCtrlType
 {
