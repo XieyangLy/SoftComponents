@@ -41,7 +41,7 @@ struct softRingBufType
 /*
 *
 */
-		int32_t (*putData)(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
+	int32_t (*putData)(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
 /*
 *
 */
