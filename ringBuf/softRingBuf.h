@@ -30,16 +30,48 @@ struct softRingBufType
     uint32_t frameNumber;                         //
     uint32_t frameEnable;                       //使能fram
     softRingFrame *softRingFrame;                 //存储fram
+/*
+*
+*/
     int32_t (*putChar)(softRingBuf* const pRingBuf,uint8_t chr);
+/*
+*
+*/
     int32_t (*getChar)(softRingBuf* const pRingBuf,uint8_t *chr);
+/*
+*
+*/
+		int32_t (*putData)(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
+/*
+*
+*/
     int32_t (*putFrame)(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
+/*
+*
+*/
     int32_t (*getFrame)(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
+/*
+*
+*/
     int32_t (*clear)(softRingBuf* const pRingBuf);
+/*
+*
+*/
     int32_t (*space)(softRingBuf* const pRingBuf);
+/*
+*
+*/
     int32_t (*amount)(softRingBuf* const pRingBuf);
+/*
+*
+*/
     int32_t (*frameSpace)(softRingBuf* const pRingBuf);
+/*
+*
+*/
     int32_t (*frameAmount)(softRingBuf* const pRingBuf);
 };
+
 
 
 /*
@@ -47,50 +79,6 @@ struct softRingBufType
 */
 int32_t softRingBufInit(softRingBuf* pRingBuf);
 
-/*
-*
-*/
-int32_t softRingPutChar(softRingBuf* pRingBuf,uint8_t chr);
-
-/*
-*
-*/
-int32_t softRingPutFrame(softRingBuf* pRingBuf,uint8_t *pBuf,uint32_t length);
-
-/*
-*
-*/
-int32_t softRingGetChar(softRingBuf* pRingBuf,uint8_t *chr);
-
-/*
-*
-*/
-int32_t softRingGetFrame(softRingBuf* pRingBuf,uint8_t *pBuf,uint32_t length);
-
-/*
-*
-*/
-int32_t softRingClear(softRingBuf* pRingBuf);
-
-/*
-*
-*/
-int32_t softRingSpace(softRingBuf* pRingBuf);
-
-/*
-*
-*/
-int32_t softRingAmount(softRingBuf* pRingBuf);
-
-/*
-*
-*/
-int32_t softRingFameSpace(softRingBuf* const pRingBuf);
-
-/*
-*
-*/
-int32_t softRingFameAmount(softRingBuf* const pRingBuf);
 
 
 

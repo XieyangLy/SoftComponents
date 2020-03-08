@@ -7,11 +7,26 @@
 */
 
 
+
+
+
+
+int32_t softRingPutChar(softRingBuf* const pRingBuf,uint8_t chr);
+int32_t softRingPutData(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
+int32_t softRingPutFrame(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
+int32_t softRingGetChar(softRingBuf* const pRingBuf,uint8_t *chr);
+int32_t softRingGetFrame(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length);
+int32_t softRingClear(softRingBuf* const pRingBuf);
+int32_t softRingSpace(softRingBuf* const pRingBuf);
+int32_t softRingAmount(softRingBuf* const pRingBuf);
+int32_t softRingFameSpace(softRingBuf* const pRingBuf);
+int32_t softRingFameAmount(softRingBuf* const pRingBuf);
+
 int32_t softRingBufInit(softRingBuf* const pRingBuf)
 {
      if(pRingBuf == NULL)     return soft_PtrNULL;
 
-     if(pRingBuf->memPtr ==NULL) return soft_OpErr;
+     if(pRingBuf->memPtr == NULL) return soft_OpErr;
 
      //初始化begin和end
      pRingBuf->read = pRingBuf->memSize -1;
@@ -23,6 +38,17 @@ int32_t softRingBufInit(softRingBuf* const pRingBuf)
           pRingBuf->softRingFrame[i].next = pRingBuf->softRingFrame[i+1].next;
           pRingBuf->softRingFrame[i].frameAttr.use = false;
      }
+		 pRingBuf->putChar = softRingPutChar;
+		 pRingBuf->getChar = softRingGetChar;
+		 pRingBuf->putData = softRingPutData;
+		 pRingBuf->putFrame = softRingPutFrame;
+		 pRingBuf->getFrame = softRingGetFrame;
+		 pRingBuf->clear = softRingClear;
+		 pRingBuf->space = softRingSpace;
+		 pRingBuf->amount = softRingAmount;
+		 pRingBuf->frameSpace = softRingFameSpace;
+		 pRingBuf->frameAmount = softRingFameAmount;
+		 return soft_OK;
 }
 
 
@@ -35,7 +61,27 @@ int32_t softRingPutChar(softRingBuf* const pRingBuf,uint8_t chr)
      //缓冲区满
      if((pRingBuf->write +1)%pRingBuf->memSize == pRingBuf->read) return soft_OverFlow;    
 
-     pRingBuf->memPtr[(pRingBuf->write +1)%pRingBuf->memSize] = chr; return soft_OK;
+      pRingBuf->memPtr[pRingBuf->write] = chr;
+			pRingBuf->write = (pRingBuf->write + 1)%pRingBuf->memSize;
+			return soft_OK;
+}
+
+int32_t softRingPutData(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t length)
+{
+     if(pRingBuf == NULL)     return soft_PtrNULL;
+
+     if(pRingBuf->frameEnable) return soft_OpErr;
+
+     //缓冲区满
+     if((pRingBuf->write + length)%pRingBuf->memSize == pRingBuf->read) return soft_OverFlow;   
+	
+		 //写入数据
+     for(int i=0;i < length;i++)
+     {
+			 pRingBuf->memPtr[pRingBuf->write] = *pBuf++;
+			 pRingBuf->write = (pRingBuf->write + 1)%pRingBuf->memSize;
+     }
+		return soft_OK;
 }
 
 
@@ -55,7 +101,7 @@ int32_t softRingPutFrame(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t leng
      if((pRingBuf->write + length)%pRingBuf->memSize == pRingBuf->read) return soft_OverFlow;    
 
      //写入frame信息
-     softRingFrame* framePtr = pRingBuf->softRingFrame;
+     framePtr = pRingBuf->softRingFrame;
      for(int i=0;framePtr->frameAttr.use;framePtr = framePtr->next)
      {
           if(!framePtr->frameAttr.use)
@@ -68,12 +114,12 @@ int32_t softRingPutFrame(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t leng
           if(++i >= pRingBuf->frameNumber) return soft_FrameExhausted;
      }
     
-    //写入数据
-     for(int i=0;i < length;i++);
+			//写入数据
+     for(int i=0;i < length;i++)
      {
-          pRingBuf->memPtr[(pRingBuf->write++ + 1)%pRingBuf->memSize] = pBuf++;
+				pRingBuf->memPtr[pRingBuf->write] = *pBuf++;
+				pRingBuf->write = (pRingBuf->write + 1)%pRingBuf->memSize;
      }
-
      return soft_OK;
 }
 
@@ -86,8 +132,9 @@ int32_t softRingGetChar(softRingBuf* const pRingBuf,uint8_t *chr)
 
       //缓冲区空
      if((pRingBuf->read +1)%pRingBuf->memSize == pRingBuf->write) return soft_NoData;   
-
-     *chr =  pRingBuf->memPtr[(pRingBuf->write +1)%pRingBuf->memSize]; return soft_OK;
+			pRingBuf->read =(++pRingBuf->read)%pRingBuf->memSize;
+     *chr =  pRingBuf->memPtr[pRingBuf->read]; return soft_OK;
+			
 }
 
 
@@ -126,7 +173,7 @@ int32_t softRingGetFrame(softRingBuf* const pRingBuf,uint8_t *pBuf,uint32_t bufL
      for(int i=0;i < redLength;i++)
      {
           *pBuf++ = pRingBuf->memPtr[framePtr->begin];
-          framePtr->begin =  (framePtr->begin +1)% pRingBuf->memSize;
+          framePtr->begin =  (framePtr->begin++)% pRingBuf->memSize;
      }
      return redLength;
 }
@@ -149,8 +196,10 @@ int32_t softRingClear(softRingBuf* const pRingBuf)
      }
 
      //抹除数据
-     #include "stdlib.h"
+     #include "string.h"
      memset(pRingBuf->memPtr,0, pRingBuf->memSize);
+		 
+		 return soft_OK;
 }
 
 
@@ -158,8 +207,8 @@ int32_t softRingSpace(softRingBuf* const pRingBuf)
 {
      if(pRingBuf == NULL)     return soft_PtrNULL;
      
-     if(pRingBuf->write >= pRingBuf->read) return pRingBuf->write - pRingBuf->read;
-     else return pRingBuf->memSize - pRingBuf->read + pRingBuf->write;
+     if(pRingBuf->read >= pRingBuf->write) return pRingBuf->read - pRingBuf->write;
+     else return pRingBuf->memSize - pRingBuf->write + pRingBuf->read ;
 }
 
 
@@ -167,8 +216,8 @@ int32_t softRingAmount(softRingBuf* const pRingBuf)
 {
      if(pRingBuf == NULL)     return soft_PtrNULL;
 
-     if(pRingBuf->read >= pRingBuf->write) return pRingBuf->read - pRingBuf->write;
-     else return pRingBuf->memSize - pRingBuf->write+ pRingBuf->read;
+     if(pRingBuf->write >= pRingBuf->read) return pRingBuf->write - pRingBuf->read -1;
+     else return pRingBuf->memSize - pRingBuf->read + pRingBuf->write -1;
 }
 
 
@@ -211,6 +260,7 @@ int32_t softRingFameAmount(softRingBuf* const pRingBuf)
           }
           return i;
      }
+		 return 0;
 }
 
 

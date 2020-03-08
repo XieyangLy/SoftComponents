@@ -12,6 +12,11 @@
 #define true !false
 #endif
 
+#ifndef NULL
+#define NULL 0
+#endif
+
+
 
 #define soft_OK                  0       //操作成功
 #define soft_OpErr              -1      //操作错误
