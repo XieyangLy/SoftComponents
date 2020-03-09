@@ -24,6 +24,7 @@
 #define soft_PtrNULL            -3      //指针为空
 #define soft_NoData             -4      //没有数据
 #define soft_FrameExhausted     -5      //帧资源耗尽
+#define soft_UUIDduplicate      -6      //uuid重复
 
 
 
