@@ -1,5 +1,5 @@
 
-#include "softTimer.h"
+#include "./softTimer.h"
 
 int32_t  softTimerInc(softTimer* const st);
 int32_t  softTimerPause(softTimer* const st);
@@ -10,7 +10,7 @@ int32_t softTimerGetTick(softTimer* const st,uint8_t* circle,uint32_t* cnt);
 int32_t softTimerGetUUID(softTimer* const st);
 int32_t softTimeritemInsert(softTimer* const st,softTimerItem *item);
 int32_t softTimerRemove(softTimer* const st,softTimerItem *item);
-int32_t softTimerTask(void);
+int32_t softTimerTask(softTimer* const st);
 
 
 
@@ -40,6 +40,7 @@ int32_t softTimerInit(softTimer* const st)
     st->itemInsert      = softTimeritemInsert;
     st->itemRemove      = softTimerRemove;
     st->task            = softTimerTask;
+		return soft_OK;
 }
 
 
@@ -58,7 +59,8 @@ int32_t  softTimerPause(softTimer* const st)
 {
     if(st == NULL) return soft_PtrNULL;
 
-    if(st->stat.run = 0) return soft_OK;
+    st->stat.run = false;
+		return soft_OK;
 }
 
 
@@ -66,16 +68,18 @@ int32_t  softTimerResume(softTimer* const st)
 {
     if(st == NULL) return soft_PtrNULL;
 
-    if(st->stat.run = 1) return soft_OK;
+    st->stat.run = true;
+		return soft_OK;
 }
 
 
 
 int32_t softTimerCntSet(softTimer* const st,uint32_t cnt)
 {
-     if(st == NULL) return soft_PtrNULL;
+    if(st == NULL) return soft_PtrNULL;
 
-    if(st->cnt = cnt) return soft_OK;
+		st->cnt = cnt;
+		return soft_OK;
 }
 
 
@@ -83,7 +87,8 @@ int32_t softTimerCircleSet(softTimer* const st,uint32_t circle)
 {
     if(st == NULL) return soft_PtrNULL;
 
-    if(st->circle = circle) return soft_OK;
+    st->circle = circle;
+		return soft_OK;
 }
 
  int32_t softTimerGetTick(softTimer* const st,uint8_t* circle,uint32_t* cnt)
@@ -151,10 +156,10 @@ int32_t softTimerRemove(softTimer* const st,softTimerItem *item)
 /*
 *检查是否有item触发，并进行回调
 */
-int32_t softTimerTask(void)
+int32_t softTimerTask(softTimer* const st)
 {
 
 
-
+	return soft_OK;
 }
 

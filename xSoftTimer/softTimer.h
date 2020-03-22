@@ -34,8 +34,8 @@ struct softTimerType
     int32_t (*resume)(softTimer* const st);
     int32_t (*cntSet)(softTimer* const st,uint32_t cnt);
     int32_t (*circleSet)(softTimer* const st,uint32_t circle);
-    int32_t (*getTick)(softTimer* const st,uint8_t *circle，uint32_t *cnt);
-    uint32_t (*getUUID)(softTimer* const st);
+    int32_t (*getTick)(softTimer* const st,uint8_t *circle,uint32_t *cnt);
+    int32_t (*getUUID)(softTimer* const st);
     int32_t (*itemInsert)(softTimer* const st,softTimerItem *item);
     int32_t (*itemRemove)(softTimer* const st,softTimerItem *item);
     int32_t (*task)(softTimer* const st);
