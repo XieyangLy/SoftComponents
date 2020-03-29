@@ -1,5 +1,7 @@
 
 #include "./softTimer.h"
+#include "stm32f7xx_hal.h"
+//#include "stm32f7xx_hal_tim.h"
 
 int32_t  softTimerInc(softTimer* const st);
 int32_t  softTimerPause(softTimer* const st);
@@ -11,10 +13,16 @@ int32_t softTimerGetUUID(softTimer* const st);
 int32_t softTimeritemInsert(softTimer* const st,softTimerItem *item);
 int32_t softTimerRemove(softTimer* const st,softTimerItem *item);
 int32_t softTimerTask(softTimer* const st);
+int32_t softTimerCheckDelay(softTimer* const st,struct softTimerStampType stamp,uint32_t ticks);
+int32_t softTimerGetDelay(softTimer* const st,struct softTimerStampType stamp);
+int32_t softTimerGetStamp(softTimer* const st,struct softTimerStampType *sTamp);
 
+/*
+*********************  variable
+*/
+TIM_HandleTypeDef  htim7; 
 
-
-
+struct softTimerType hSoftTimer1;
 
 /*
 * softtime init
@@ -25,8 +33,8 @@ int32_t softTimerInit(softTimer* const st)
     if(st == NULL) return soft_PtrNULL;
 
     st->stat.run = true;
-    st->circle = 0;
-    st->cnt = 0;
+    st->stamp.circle = 0;
+    st->stamp.cnt = 0;
     st->uuidNext = 0;
     st->item = NULL;
 
@@ -40,6 +48,9 @@ int32_t softTimerInit(softTimer* const st)
     st->itemInsert      = softTimeritemInsert;
     st->itemRemove      = softTimerRemove;
     st->task            = softTimerTask;
+	 st->getDelay					= softTimerGetDelay;
+		st->checkDelay			= softTimerCheckDelay;
+		st->getStamp				= softTimerGetStamp;
 		return soft_OK;
 }
 
@@ -50,8 +61,8 @@ int32_t  softTimerInc(softTimer* const st)
     if(st == NULL) return soft_PtrNULL;
 
     if(!st->stat.run) return soft_OK;
-    st->cnt++;
-    if(st->cnt == 0xFFFFFFFF) st->circle++;
+    st->stamp.cnt++;
+    if(st->stamp.cnt == 0xFFFFFFFF) st->stamp.circle++;
     return soft_OK;
 }
 
@@ -78,7 +89,7 @@ int32_t softTimerCntSet(softTimer* const st,uint32_t cnt)
 {
     if(st == NULL) return soft_PtrNULL;
 
-		st->cnt = cnt;
+		st->stamp.cnt = cnt;
 		return soft_OK;
 }
 
@@ -87,7 +98,7 @@ int32_t softTimerCircleSet(softTimer* const st,uint32_t circle)
 {
     if(st == NULL) return soft_PtrNULL;
 
-    st->circle = circle;
+    st->stamp.circle = circle;
 		return soft_OK;
 }
 
@@ -95,8 +106,8 @@ int32_t softTimerCircleSet(softTimer* const st,uint32_t circle)
  {
      if(st == NULL) return soft_PtrNULL;
 
-     *cnt = st->cnt;
-     *circle = st->circle;
+     *cnt = st->stamp.cnt;
+     *circle = st->stamp.circle;
 
      return soft_OK;
  }
@@ -151,6 +162,46 @@ int32_t softTimerRemove(softTimer* const st,softTimerItem *item)
     return soft_NoData;
 }
 
+inline static int32_t SoftTimerStampSub(struct softTimerStampType stampSrc,struct softTimerStampType StampDec)
+{
+	if(stampSrc.circle - StampDec.circle > 1) return 	soft_OverFlow;
+	
+	if((stampSrc.circle > StampDec.circle)&&(stampSrc.cnt >= StampDec.cnt)) return soft_OverFlow;
+	
+	if(stampSrc.circle >= StampDec.circle)
+	{
+		return stampSrc.circle - StampDec.circle;
+	}
+		return 0xFFFFFFFF  - StampDec.cnt +stampSrc.cnt;
+
+}
+
+int32_t softTimerGetDelay(softTimer* const st,struct softTimerStampType stamp)
+{
+	return SoftTimerStampSub(st->stamp,stamp);
+
+}
+
+int32_t softTimerCheckDelay(softTimer* const st,struct softTimerStampType stamp,uint32_t ticks)
+{
+	if(SoftTimerStampSub(st->stamp,stamp) < ticks) return 0;
+	
+	return 1;
+}
+
+
+
+
+int32_t softTimerGetStamp(softTimer* const st,struct softTimerStampType *sTamp)
+{
+	if(st == NULL) return soft_PtrNULL; 
+	if(sTamp == NULL) return soft_PtrNULL; 
+	*sTamp = st->stamp;
+	
+	return soft_OK;
+
+}
+
 
 
 /*
@@ -162,4 +213,89 @@ int32_t softTimerTask(softTimer* const st)
 
 	return soft_OK;
 }
+
+
+void TIM7_Init(void)
+{
+		//初始化Timer7
+	RCC_ClkInitTypeDef    clkconfig = {0};
+  uint32_t              uwTimclock = 0;
+  uint32_t              uwPrescalerValue = 0;
+  uint32_t              pFLatency;
+  
+	
+  /*Configure the TIM7 IRQ priority */
+  HAL_NVIC_SetPriority(TIM7_IRQn, TICK_INT_PRIORITY ,0); 
+  
+  /* Enable the TIM7 global Interrupt */
+  HAL_NVIC_EnableIRQ(TIM7_IRQn); 
+  
+  /* Enable TIM7 clock */
+  __HAL_RCC_TIM7_CLK_ENABLE();
+  
+  /* Get clock configuration */
+  HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
+  
+  /* Compute TIM6 clock */
+  uwTimclock = 2*HAL_RCC_GetPCLK1Freq();
+   
+  /* Compute the prescaler value to have TIM7 counter clock equal to 1MHz */
+  uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000) - 1);
+  
+  /* Initialize TIM7 */
+  htim7.Instance = TIM7;
+  
+  /* Initialize TIMx peripheral as follow:
+  + Period = [(TIM7CLK/1000) - 1]. to have a (1/1000) s time base.
+  + Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
+  + ClockDivision = 0
+  + Counter direction = Up
+  */
+  htim7.Init.Period = (1000000 / 1000) - 1;
+  htim7.Init.Prescaler = uwPrescalerValue;
+  htim7.Init.ClockDivision = 0;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  if(HAL_TIM_Base_Init(&htim7) == HAL_OK)
+  {
+    /* Start the TIM time Base generation in interrupt mode */
+		HAL_TIM_Base_Start_IT(&htim7);
+    return ;
+  }
+  
+  /* Return function status */
+  return ;
+}
+
+
+void TIM7_IRQHandler(void)
+{
+	if (__HAL_TIM_GET_IT_SOURCE(&htim7, TIM_IT_UPDATE) != RESET)
+	{
+		hSoftTimer1.inc(&hSoftTimer1);
+		__HAL_TIM_CLEAR_IT(&htim7,TIM_IT_UPDATE);
+	}
+}
+
+
+/*
+* 初始化系统时钟  
+*/
+int32_t softTimerBaseInit(void)
+{
+	/*
+	* 初始化句柄
+	*/
+	softTimerInit(&hSoftTimer1);
+
+	
+	//初始化时钟
+	TIM7_Init();
+	
+	return soft_OK;
+}
+
+
+
+
+
 

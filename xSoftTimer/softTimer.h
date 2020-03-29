@@ -3,6 +3,10 @@
 #define X_SOFT_TIMER_H__
 #include "../SoftType.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 typedef struct softTimerType softTimer;
 typedef struct softTimerItemType softTimerItem;
 
@@ -17,6 +21,11 @@ struct softTimerItemType
     softTimerItem* next;
 };
 
+struct softTimerStampType
+{
+	  uint8_t circle;               //计时圈数
+    uint32_t cnt;
+};
 
 
 struct softTimerType
@@ -25,8 +34,9 @@ struct softTimerType
         uint32_t run:1;           //运行状态
         uint32_t :0;
     }stat;
-    uint8_t circle;               //计时圈数
-    uint32_t cnt;
+		struct softTimerStampType stamp;
+//    uint8_t circle;               //计时圈数
+//    uint32_t cnt;
     uint32_t uuidNext;            //下一个可用的uuid
     softTimerItem* item;
     int32_t (*inc)(softTimer* const st);
@@ -39,9 +49,23 @@ struct softTimerType
     int32_t (*itemInsert)(softTimer* const st,softTimerItem *item);
     int32_t (*itemRemove)(softTimer* const st,softTimerItem *item);
     int32_t (*task)(softTimer* const st);
+		/*
+		*检查时间溢出，0:时间未溢出,1时间溢出
+		*/
+		int32_t (*checkDelay)(softTimer* const st,struct softTimerStampType stamp,uint32_t ticks);
+		
+		/*
+		*获取时间差
+		*/
+		int32_t (*getDelay)(softTimer* const st,struct softTimerStampType stamp);
+		
+		/*
+		*获取时间戳
+		*/
+		int32_t (*getStamp)(softTimer* const st,struct softTimerStampType *sTamp);
 };
 
-
+extern struct softTimerType hSoftTimer1;
 
 
 /*
@@ -51,7 +75,13 @@ struct softTimerType
 int32_t softTimerInit(softTimer *st);
 
 
+/*
+* 初始化系统时钟
+*/
+int32_t softTimerBaseInit(void);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif //X_SOFT_TIMER_H__

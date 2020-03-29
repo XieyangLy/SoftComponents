@@ -22,8 +22,11 @@
 #if (xDebug_IO_Use == xDebug_stdio)
 #include "stdio.h"
 
-#define xDebug_Print(port,...)	printf("%s",__VA_ARGS__)
-#define xDebug_TerminalOut(port,...) printf("%s",__VA_ARGS__)
+//#define xDebug_Print(port,...)	printf("%s",__VA_ARGS__)
+//#define xDebug_TerminalOut(port,...) printf("%s",__VA_ARGS__)
+
+#define xDebug_Print(port,...)	printf(__VA_ARGS__)
+#define xDebug_TerminalOut(port,...) printf(__VA_ARGS__)
 
 #elif(xDebug_IO_Use == xDebug_segger_rtt)
 #include "./SEGGER_RTT_V634h/RTT/SEGGER_RTT.h"
