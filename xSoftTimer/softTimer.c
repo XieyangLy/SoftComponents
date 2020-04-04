@@ -186,7 +186,6 @@ int32_t softTimerGetDelay(softTimer* const st,struct softTimerStampType stamp,ui
 int32_t softTimerCheckDelay(softTimer* const st,struct softTimerStampType stamp,uint32_t ticks)
 {
 	uint32_t detTicks;
-	return 0;
 	if(SoftTimerStampSub(st->stamp,stamp,&detTicks) != soft_OK) return 1;
 	if(detTicks > ticks) return 1;
 	
