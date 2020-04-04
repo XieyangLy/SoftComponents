@@ -57,7 +57,7 @@ struct softTimerType
 		/*
 		*获取时间差
 		*/
-		int32_t (*getDelay)(softTimer* const st,struct softTimerStampType stamp);
+		int32_t (*getDelay)(softTimer* const st,struct softTimerStampType stamp,uint32_t *ticks);
 		
 		/*
 		*获取时间戳

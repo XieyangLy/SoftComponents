@@ -14,7 +14,7 @@ int32_t softTimeritemInsert(softTimer* const st,softTimerItem *item);
 int32_t softTimerRemove(softTimer* const st,softTimerItem *item);
 int32_t softTimerTask(softTimer* const st);
 int32_t softTimerCheckDelay(softTimer* const st,struct softTimerStampType stamp,uint32_t ticks);
-int32_t softTimerGetDelay(softTimer* const st,struct softTimerStampType stamp);
+int32_t softTimerGetDelay(softTimer* const st,struct softTimerStampType stamp,uint32_t *ticks);
 int32_t softTimerGetStamp(softTimer* const st,struct softTimerStampType *sTamp);
 
 /*
@@ -48,7 +48,7 @@ int32_t softTimerInit(softTimer* const st)
     st->itemInsert      = softTimeritemInsert;
     st->itemRemove      = softTimerRemove;
     st->task            = softTimerTask;
-	 st->getDelay					= softTimerGetDelay;
+		st->getDelay					= softTimerGetDelay;
 		st->checkDelay			= softTimerCheckDelay;
 		st->getStamp				= softTimerGetStamp;
 		return soft_OK;
@@ -162,31 +162,35 @@ int32_t softTimerRemove(softTimer* const st,softTimerItem *item)
     return soft_NoData;
 }
 
-inline static int32_t SoftTimerStampSub(struct softTimerStampType stampSrc,struct softTimerStampType StampDec)
+inline static int32_t SoftTimerStampSub(struct softTimerStampType stampSrc,struct softTimerStampType StampDec,uint32_t *ticks)
 {
 	if(stampSrc.circle - StampDec.circle > 1) return 	soft_OverFlow;
 	
 	if((stampSrc.circle > StampDec.circle)&&(stampSrc.cnt >= StampDec.cnt)) return soft_OverFlow;
 	
-	if(stampSrc.circle >= StampDec.circle)
+	if(stampSrc.cnt >= StampDec.cnt)
 	{
-		return stampSrc.circle - StampDec.circle;
+		*ticks = stampSrc.cnt - StampDec.cnt;
+		return soft_OK;
 	}
-		return 0xFFFFFFFF  - StampDec.cnt +stampSrc.cnt;
-
+	*ticks =0xFFFFFFFF  - StampDec.cnt +stampSrc.cnt;
+	return soft_OK;
 }
 
-int32_t softTimerGetDelay(softTimer* const st,struct softTimerStampType stamp)
+int32_t softTimerGetDelay(softTimer* const st,struct softTimerStampType stamp,uint32_t *ticks)
 {
-	return SoftTimerStampSub(st->stamp,stamp);
+	return SoftTimerStampSub(st->stamp,stamp,ticks);
 
 }
 
 int32_t softTimerCheckDelay(softTimer* const st,struct softTimerStampType stamp,uint32_t ticks)
 {
-	if(SoftTimerStampSub(st->stamp,stamp) < ticks) return 0;
+	uint32_t detTicks;
+	return 0;
+	if(SoftTimerStampSub(st->stamp,stamp,&detTicks) != soft_OK) return 1;
+	if(detTicks > ticks) return 1;
 	
-	return 1;
+	return 0;
 }
 
 
